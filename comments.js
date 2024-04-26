@@ -1,43 +1,62 @@
-// create webserver
-// 1. create a web server
-// 2. create a request handler
-// 3. create a response handler
-// 4. create a port
-// 5. create a listener
-// 6. create a server
-// 7. create a listen
-
-// create a web server
-const http = require('http');
+// Create web server
+// Create a web server that listens on port 3000 and serves the comments.html file.
+// The comments.html file should have a form that posts to /comments and a list of comments.
+// When a POST request is sent to /comments, the server should add the posted comment to the list of comments and redirect to /comments.
+// The list of comments should be stored in a separate comments.js file as an array of strings.
+// The server should serve the comments.html file with the list of comments interpolated into the file.
+// If you receive a GET request to /comments, you should respond with the comments in JSON format.
 const fs = require('fs');
+const http = require('http');
+const url = require('url');
+const querystring = require('querystring');
 
-// create a request handler
-const requestHandler = (request, response) => {
-    // create a response handler
-    response.writeHead(200, {'Content-Type': 'text/html'});
-    // response.write('Hello World');
-    fs.readFile('./index.html', null, function(error, data) {
-        if (error) {
-            response.writeHead(404);
-            response.write('File not found');
-        } else {
-            response.write(data);
-        }
-        response.end();
-    });
-};
+const comments = require('./comments');
 
-// create a port
-const port = 3000;
+const server = http.createServer((req, res) => {
+  const parsedUrl = url.parse(req.url);
+  const parsedQuery = querystring.parse(parsedUrl.query);
 
-// create a server
-const server = http.createServer(requestHandler);
+  if (parsedUrl.pathname === '/comments') {
+    if (req.method === 'POST') {
+      let body = '';
 
-// create a listener
-server.listen(port, (error) => {
-    if (error) {
-        return console.log('Error: ', error);
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+
+      req.on('end', () => {
+        const comment = querystring.parse(body).comment;
+        comments.push(comment);
+
+        res.writeHead(302, { Location: '/comments' });
+        res.end();
+      });
+    } else if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(comments));
     }
+  } else {
+    fs.readFile('./comments.html', (err, data) => {
+      if (err) {
+        res.writeHead(404);
+        res.end('Not Found');
+      } else {
+        const commentsList = comments.map((comment) => `<li>${comment}</li>`).join('');
+        const html = data.toString().replace('<!-- comments -->', commentsList);
 
-    console.log(`Server is listening on ${port}`);
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(html);
+      }
+    });
+  }
 });
+
+server.listen(3000);
+
+// Path: comments.html
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//   <meta charset="UTF-8">
+//   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//   <title>Comments</title>
