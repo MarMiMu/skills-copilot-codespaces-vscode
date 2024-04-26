@@ -1,42 +1,43 @@
 // create webserver
-var http = require('http');
-var fs = require('fs');
-var url = require('url');
-var qs = require('querystring');
-var template = require('./lib/template.js');
-var path = require('path');
+// 1. create a web server
+// 2. create a request handler
+// 3. create a response handler
+// 4. create a port
+// 5. create a listener
+// 6. create a server
+// 7. create a listen
 
-var app = http.createServer(function(request,response){
-  var _url = request.url;
-  var queryData = url.parse(_url, true).query;
-  var pathName = url.parse(_url, true).pathname;
-  var title = queryData.id;
-  var description = queryData.id;
-  var comments = queryData.comments;
-  var html = template.HTML(title, description, comments);
-  var dir = pathName;
-  if(pathName === '/'){
-    title = 'Welcome';
-    description = 'Hello, Node.js';
-    comments = '<ul><li>hello</li><li>world</li></ul>';
-    html = template.HTML(title, description, comments);
-    response.writeHead(200);
-    response.end(html);
-  } else {
-    fs.readdir(`./data/${dir}`, function(error, filelist){
-      if(error){
-        console.log(error);
-        response.writeHead(404);
-        response.end('Not Found');
-      } else {
-        var title = 'Welcome';
-        var description = 'Hello, Node.js';
-        var comments = '<ul><li>hello</li><li>world</li></ul>';
-        html = template.HTML(title, description, comments);
-        response.writeHead(200);
-        response.end(html);
-      }
+// create a web server
+const http = require('http');
+const fs = require('fs');
+
+// create a request handler
+const requestHandler = (request, response) => {
+    // create a response handler
+    response.writeHead(200, {'Content-Type': 'text/html'});
+    // response.write('Hello World');
+    fs.readFile('./index.html', null, function(error, data) {
+        if (error) {
+            response.writeHead(404);
+            response.write('File not found');
+        } else {
+            response.write(data);
+        }
+        response.end();
     });
-  }
+};
+
+// create a port
+const port = 3000;
+
+// create a server
+const server = http.createServer(requestHandler);
+
+// create a listener
+server.listen(port, (error) => {
+    if (error) {
+        return console.log('Error: ', error);
+    }
+
+    console.log(`Server is listening on ${port}`);
 });
-app.listen(3000);
