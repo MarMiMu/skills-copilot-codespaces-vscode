@@ -1,38 +1,42 @@
 // create webserver
-// create a server that listens on port 3000
-// create a route that listens on /comments
-// when a GET request is made to /comments
-// return the comments array as JSON
-// when a POST request is made to /comments
-// add the comment to the comments array
-// return the comments array as JSON
+var http = require('http');
+var fs = require('fs');
+var url = require('url');
+var qs = require('querystring');
+var template = require('./lib/template.js');
+var path = require('path');
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-
-const comments = [];
-
-const server = http.createServer((req, res) => {
-  if (req.method === 'GET' && req.url === '/comments') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(comments));
-  } else if (req.method === 'POST' && req.url === '/comments') {
-    let body = '';
-    req.on('data', (data) => {
-      body += data;
-    });
-    req.on('end', () => {
-      comments.push(JSON.parse(body));
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(comments));
-    });
+var app = http.createServer(function(request,response){
+  var _url = request.url;
+  var queryData = url.parse(_url, true).query;
+  var pathName = url.parse(_url, true).pathname;
+  var title = queryData.id;
+  var description = queryData.id;
+  var comments = queryData.comments;
+  var html = template.HTML(title, description, comments);
+  var dir = pathName;
+  if(pathName === '/'){
+    title = 'Welcome';
+    description = 'Hello, Node.js';
+    comments = '<ul><li>hello</li><li>world</li></ul>';
+    html = template.HTML(title, description, comments);
+    response.writeHead(200);
+    response.end(html);
   } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not Found');
+    fs.readdir(`./data/${dir}`, function(error, filelist){
+      if(error){
+        console.log(error);
+        response.writeHead(404);
+        response.end('Not Found');
+      } else {
+        var title = 'Welcome';
+        var description = 'Hello, Node.js';
+        var comments = '<ul><li>hello</li><li>world</li></ul>';
+        html = template.HTML(title, description, comments);
+        response.writeHead(200);
+        response.end(html);
+      }
+    });
   }
 });
-
-server.listen(3000, () => {
-  console.log('Server listening on port 3000');
-});
+app.listen(3000);
